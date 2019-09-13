@@ -4,7 +4,8 @@ module.exports = {
   createProject,
   getProjects,
   getProjectById,
-  getTasksByProjectId
+  getTasksByProjectId,
+  getResourcessByProjectId
 };
 
 function createProject(body) {
@@ -27,14 +28,29 @@ function getProjects() {
   });
 }
 
+/* function getProjectById(id) {
+  return db("projects")
+    .where({ id: id })
+    .first()
+    .then(response => {
+      return getTasksByProjectId(id).then(res => {
+        response.tasks = res;
+        return response;
+      });
+    });
+} */
+
 function getProjectById(id) {
   return db("projects")
     .where({ id: id })
     .first()
-    .then(result => {
-      return getTasksByProjectId(id).then(res => {
-        result.tasks = res;
-        return result;
+    .then(response => {
+      return getTasksByProjectId(id).then(tasks => {
+        response.tasks = tasks;
+        return getResourcessByProjectId(id).then(resources => {
+          response.resources = resources;
+          return response;
+        });
       });
     });
 }
@@ -50,5 +66,28 @@ function getTasksByProjectId(id) {
         return task;
       });
       return completionConversion;
+    });
+}
+
+function getResourcessByProjectId(id) {
+  return getOther(id).then(response => {
+    return response.map(response => {
+      return db("resources")
+        .where({ id: response.resource_id })
+        .then(response => {
+          response.map(response => {
+            console.log(response);
+            return response;
+          });
+        });
+    });
+  });
+}
+
+function getOther(id) {
+  return db("project_resources")
+    .where({ project_id: id })
+    .then(response => {
+      return response;
     });
 }
